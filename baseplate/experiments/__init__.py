@@ -189,8 +189,36 @@ class Experiments(object):
 
         return variant
 
+    def expose(self, experiment_name, variant_name, user=None, **kwargs):
 
-def experiments_client_from_config(app_config, event_queue):
+        experiment = self._get_experiment(name)
+
+        if experiment is None:
+            return
+
+        inputs = dict(kwargs)
+
+        if user:
+            if user.is_logged_in:
+                inputs["user_id"] = user.id
+                inputs["user_roles"] = user.roles
+            else:
+                inputs["user_id"] = user.loid
+            inputs["logged_in"] = user.is_logged_in
+            inputs['cookie_created_timestamp'] = user.event_fields().get('cookie_created')
+
+        self._event_logger.log(
+            experiment=experiment,
+            variant=variant,
+            user_id=inputs.get('user_id'),
+            logged_in=inputs.get('logged_in'),
+            cookie_created_timestamp=inputs.get('cookie_created_timestamp'),
+            app_name=inputs.get('app_name'),
+            exposure=True,
+        )
+
+
+def experiments_client_from_config(app_config, event_logger):
     """Configure and return an :py:class:`ExperimentsContextFactory` object.
 
     This expects one configuration option:
@@ -201,7 +229,7 @@ def experiments_client_from_config(app_config, event_queue):
 
     :param dict raw_config: The application configuration which should have
         settings for the experiments client.
-    :param baseplate.events.EventQueue event_queue: The EventQueue to be used
+    :param baseplate.events.EventLogger event_logger: The EventLogger to be used
         to log bucketing events.
     :rtype: :py:class:`ExperimentsContextFactory`
 
@@ -212,4 +240,4 @@ def experiments_client_from_config(app_config, event_queue):
         },
     })
     # pylint: disable=maybe-no-member
-    return ExperimentsContextFactory(cfg.experiments.path, event_queue)
+    return ExperimentsContextFactory(cfg.experiments.path, event_logger)
