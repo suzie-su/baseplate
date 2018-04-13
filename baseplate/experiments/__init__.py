@@ -90,7 +90,7 @@ class Experiments(object):
             self._experiment_cache[name] = experiment
         return self._experiment_cache[name]
 
-    def get_all_experiment_names(self):
+    def _get_all_experiment_names(self):
         config = self._config_watcher.get_data()
         exp_names = []
         if config:

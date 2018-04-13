@@ -343,7 +343,7 @@ class TestExperiments(unittest.TestCase):
             "baseplate.experiments.providers.r2.R2Experiment.variant",
         ) as p:
             p.return_value="active"
-            experiment_names = experiments.get_all_experiment_names()
+            experiment_names = experiments._get_all_experiment_names()
             self.assertEqual(len(experiment_names), 2)
             self.assertEqual("test" in experiment_names, True)
             self.assertEqual("test2" in experiment_names, True)
