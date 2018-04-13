@@ -90,6 +90,18 @@ class Experiments(object):
             self._experiment_cache[name] = experiment
         return self._experiment_cache[name]
 
+    def get_all_experiment_names(self):
+        config = self._config_watcher.get_data()
+        exp_names = []
+        if config:
+            for name, cfg in config.items():
+                exp_names.append(name)
+
+        return exp_names
+
+    def is_valid_experiment(self, name):
+        return self._get_config(name) is not None
+
     def variant(self, name, user=None, bucketing_event_override=None,
                 extra_event_fields=None, **kwargs):
         """Which variant, if any, is active.
@@ -191,7 +203,7 @@ class Experiments(object):
 
     def expose(self, experiment_name, variant_name, user=None, **kwargs):
 
-        experiment = self._get_experiment(name)
+        experiment = self._get_experiment(experiment_name)
 
         if experiment is None:
             return
@@ -209,12 +221,12 @@ class Experiments(object):
 
         self._event_logger.log(
             experiment=experiment,
-            variant=variant,
+            variant=variant_name,
             user_id=inputs.get('user_id'),
             logged_in=inputs.get('logged_in'),
             cookie_created_timestamp=inputs.get('cookie_created_timestamp'),
             app_name=inputs.get('app_name'),
-            exposure=True,
+            exposed=True,
         )
 
 

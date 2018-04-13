@@ -308,7 +308,7 @@ class R2Experiment(Experiment):
             num_variants *
             bucket_multiplier
         )
-        if bucket < (int)bucket_limit:
+        if bucket < int(bucket_limit):
             return candidate_variant
         else:
             return None
