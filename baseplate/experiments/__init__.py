@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import json
 import logging
 
+from enum import Enum
+
 from .providers import parse_experiment
 from .. import config
 from ..context import ContextFactory
@@ -14,6 +16,11 @@ from ..file_watcher import FileWatcher, WatchedFileNotAvailableError
 
 
 logger = logging.getLogger(__name__)
+
+
+class EventType(Enum):
+    EXPOSE = 'expose'
+    BUCKET = 'choose'
 
 
 class ExperimentsContextFactory(ContextFactory):
@@ -100,7 +107,7 @@ class Experiments(object):
         return exp_names
 
     def is_valid_experiment(self, name):
-        return self._get_config(name) is not None
+        return self._get_experiment(name) is not None
 
     def variant(self, name, user=None, bucketing_event_override=None,
                 extra_event_fields=None, **kwargs):
@@ -157,13 +164,7 @@ class Experiments(object):
         inputs = dict(kwargs)
 
         if user:
-            if user.is_logged_in:
-                inputs["user_id"] = user.id
-                inputs["user_roles"] = user.roles
-            else:
-                inputs["user_id"] = user.loid
-            inputs["logged_in"] = user.is_logged_in
-            inputs['cookie_created_timestamp'] = user.event_fields().get('cookie_created')
+            inputs.update(user.event_fields())
 
         span_name = "{}.{}".format(self._context_name, "variant")
         with self._span.make_child(span_name, local=True, component_name=name):
@@ -196,6 +197,7 @@ class Experiments(object):
                 logged_in=inputs.get('logged_in'),
                 cookie_created_timestamp=inputs.get('cookie_created_timestamp'),
                 app_name=inputs.get('app_name'),
+                event_type=EventType.BUCKET,
             )
             self._already_bucketed.add(bucketing_id)
 
@@ -211,13 +213,7 @@ class Experiments(object):
         inputs = dict(kwargs)
 
         if user:
-            if user.is_logged_in:
-                inputs["user_id"] = user.id
-                inputs["user_roles"] = user.roles
-            else:
-                inputs["user_id"] = user.loid
-            inputs["logged_in"] = user.is_logged_in
-            inputs['cookie_created_timestamp'] = user.event_fields().get('cookie_created')
+            inputs.update(user.event_fields())
 
         self._event_logger.log(
             experiment=experiment,
@@ -226,7 +222,7 @@ class Experiments(object):
             logged_in=inputs.get('logged_in'),
             cookie_created_timestamp=inputs.get('cookie_created_timestamp'),
             app_name=inputs.get('app_name'),
-            exposed=True,
+            event_type=EventType.EXPOSE,
         )
 
 

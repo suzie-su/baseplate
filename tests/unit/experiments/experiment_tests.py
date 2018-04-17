@@ -11,6 +11,7 @@ from datetime import timedelta
 from baseplate.core import ServerSpan, User, AuthenticationToken
 from baseplate.events import DebugLogger
 from baseplate.experiments import (
+    EventType,
     Experiments,
     ExperimentsContextFactory,
     experiments_client_from_config,
@@ -83,6 +84,7 @@ class TestExperiments(unittest.TestCase):
         self.assertEqual(event_fields["logged_in"], True)
         self.assertEqual(event_fields["app_name"], "r2")
         self.assertEqual(event_fields["cookie_created_timestamp"], 10000)
+        self.assertEqual(event_fields["event_type"], EventType.BUCKET)
 
         self.assertEqual(getattr(event_fields["experiment"], "id"), 1)
         self.assertEqual(getattr(event_fields["experiment"], "name"), "test")
@@ -130,6 +132,7 @@ class TestExperiments(unittest.TestCase):
         self.assertEqual(event_fields["user_id"], "t2_2")
         self.assertEqual(event_fields["logged_in"], True)
         self.assertEqual(event_fields["app_name"], "r2")
+        self.assertEqual(event_fields["event_type"], EventType.BUCKET)
 
         self.assertEqual(getattr(event_fields["experiment"], "id"), 1)
         self.assertEqual(getattr(event_fields["experiment"], "name"), "test")
@@ -219,7 +222,7 @@ class TestExperiments(unittest.TestCase):
         self.assertEqual(event_fields["logged_in"], True)
         self.assertEqual(event_fields["app_name"], "r2")
         self.assertEqual(event_fields["cookie_created_timestamp"], 10000)
-        self.assertEqual(event_fields["exposed"], True)
+        self.assertEqual(event_fields["event_type"], EventType.EXPOSE)
 
         self.assertEqual(getattr(event_fields["experiment"], "id"), 1)
         self.assertEqual(getattr(event_fields["experiment"], "name"), "test")
@@ -530,8 +533,8 @@ class TestExperiments(unittest.TestCase):
 
 class ExperimentsClientFromConfigTests(unittest.TestCase):
     def test_make_clients(self):
-        event_queue = mock.Mock(spec=DebugLogger)
+        event_logger = mock.Mock(spec=DebugLogger)
         experiments = experiments_client_from_config({
             "experiments.path": "/tmp/test",
-        }, event_queue)
+        }, event_logger)
         self.assertIsInstance(experiments, ExperimentsContextFactory)
